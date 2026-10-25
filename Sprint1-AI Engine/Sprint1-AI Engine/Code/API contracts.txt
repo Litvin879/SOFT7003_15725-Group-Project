@@ -1,0 +1,7 @@
+Endpoint		Method	Success	Purpose
+/health			GET	200	Health check
+/properties		POST	201	Accept validated property details
+/valuations/model	POST	200	Return demonstration valuation
+/affordability/assess	POST	200	Produce affordability assessment
+/affordability/dti	POST	200	Calculate DTI
+/agents/valuation	POST	200	Run valuation agent
