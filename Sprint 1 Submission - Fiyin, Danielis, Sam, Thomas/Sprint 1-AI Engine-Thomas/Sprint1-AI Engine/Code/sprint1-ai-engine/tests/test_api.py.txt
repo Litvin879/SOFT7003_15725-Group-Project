@@ -1,0 +1,504 @@
+
+import pytest
+from fastapi.testclient import TestClient
+
+from app.main import app, valuation_model
+
+client = TestClient(app)
+
+
+VALID_PROPERTY = {
+    "location": "Killarney, County Kerry",
+    "bedrooms": 3,
+    "property_type": "detached_house",
+    "ber_rating": "B2",
+}
+
+VALID_BORROWER = {
+    "application_id": "APP-001",
+    "annual_income": 65000,
+    "annual_debt_repayments": 12000,
+    "deposit": 40000,
+    "mortgage_term_years": 30,
+}
+
+
+# US1: Receive property details
+
+def test_us1_accepts_valid_property():
+    response = client.post("/properties", json=VALID_PROPERTY)
+
+    assert response.status_code == 201
+    assert response.json()["status"] == "accepted"
+    assert response.json()["property"]["bedrooms"] == 3
+
+
+@pytest.mark.parametrize(
+    "field",
+    ["location", "bedrooms", "property_type", "ber_rating"],
+)
+def test_us1_rejects_missing_required_fields(field):
+    payload = VALID_PROPERTY.copy()
+    del payload[field]
+
+    response = client.post("/properties", json=payload)
+
+    assert response.status_code == 422
+
+
+def test_us1_rejects_invalid_bedroom_count():
+    payload = {**VALID_PROPERTY, "bedrooms": -1}
+
+    response = client.post("/properties", json=payload)
+
+    assert response.status_code == 422
+
+
+def test_us1_rejects_unsupported_property_type():
+    payload = {**VALID_PROPERTY, "property_type": "castle"}
+
+    response = client.post("/properties", json=payload)
+
+    assert response.status_code == 422
+
+
+def test_us1_rejects_unknown_fields():
+    payload = {**VALID_PROPERTY, "unknown_field": "unexpected"}
+
+    response = client.post("/properties", json=payload)
+
+    assert response.status_code == 422
+
+
+# US2: Automated Property Valuation Model
+
+def test_us2_returns_demo_estimate_for_valid_input():
+    response = client.post("/valuations/model", json=VALID_PROPERTY)
+
+    assert response.status_code == 200
+
+    body = response.json()
+    assert body["status"] == "success"
+    assert body["estimated_value"] > 0
+    assert body["currency"] == "EUR"
+    assert body["demo_only"] is True
+    assert "not for lending" in body["disclaimer"]
+
+
+def test_us2_rejects_invalid_property_input():
+    payload = {**VALID_PROPERTY, "ber_rating": "Z9"}
+
+    response = client.post("/valuations/model", json=payload)
+
+    assert response.status_code == 422
+
+
+def test_us2_reports_model_processing_error(monkeypatch):
+    def failing_predict(_property_data):
+        raise RuntimeError("Simulated model failure")
+
+    monkeypatch.setattr(valuation_model, "predict", failing_predict)
+
+    try:
+        response = client.post(
+            "/valuations/model",
+            json=VALID_PROPERTY,
+        )
+        assert response.status_code == 503
+        assert (
+            response.json()["detail"]["error_code"]
+            == "VALUATION_PROCESSING_FAILED"
+        )
+    finally:
+        monkeypatch.undo()
+
+
+# US3: Affordability Agent
+
+def test_us3_produces_affordability_assessment():
+    response = client.post(
+        "/affordability/assess",
+        json=VALID_BORROWER,
+    )
+
+    assert response.status_code == 200
+
+    body = response.json()
+    assert body["assessment_status"] == "completed"
+    assert body["dti"] == 18.46
+    assert body["deposit"] == 40000
+    assert body["mortgage_term_years"] == 30
+    assert body["decision"] == "not_assessed"
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
+        "annual_income",
+        "annual_debt_repayments",
+        "deposit",
+        "mortgage_term_years",
+    ],
+)
+def test_us3_rejects_missing_financial_fields(field):
+    payload = VALID_BORROWER.copy()
+    del payload[field]
+
+    response = client.post("/affordability/assess", json=payload)
+
+    assert response.status_code == 422
+
+
+def test_us3_rejects_zero_income():
+    payload = {**VALID_BORROWER, "annual_income": 0}
+
+    response = client.post("/affordability/assess", json=payload)
+
+    assert response.status_code == 422
+
+
+def test_us3_rejects_negative_deposit():
+    payload = {**VALID_BORROWER, "deposit": -1}
+
+    response = client.post("/affordability/assess", json=payload)
+
+    assert response.status_code == 422
+
+
+# US4: DTI calculation
+
+def test_us4_calculates_dti_correctly():
+    response = client.post("/affordability/dti", json=VALID_BORROWER)
+
+    assert response.status_code == 200
+
+    body = response.json()
+    assert body["dti"] == 18.46
+    assert body["unit"] == "percent"
+    assert body["status"] == "success"
+
+
+def test_us4_zero_debt_produces_zero_dti():
+    payload = {
+        **VALID_BORROWER,
+        "annual_debt_repayments": 0,
+    }
+
+    response = client.post("/affordability/dti", json=payload)
+
+    assert response.status_code == 200
+    assert response.json()["dti"] == 0.0
+
+
+def test_us4_rejects_negative_debt():
+    payload = {
+        **VALID_BORROWER,
+        "annual_debt_repayments": -100,
+    }
+
+    response = client.post("/affordability/dti", json=payload)
+
+    assert response.status_code == 422
+
+
+# US5: Valuation Agent
+
+def test_us5_returns_estimate_for_valid_property():
+    response = client.post("/agents/valuation", json=VALID_PROPERTY)
+
+    assert response.status_code == 200
+
+    body = response.json()
+    assert body["status"] == "success"
+    assert body["estimated_value"] > 0
+    assert body["currency"] == "EUR"
+    assert body["demo_only"] is True
+
+
+def test_us5_rejects_invalid_property():
+    payload = {**VALID_PROPERTY, "bedrooms": -2}
+
+    response = client.post("/agents/valuation", json=payload)
+
+    assert response.status_code == 422
+
+
+def test_us5_reports_model_failure(monkeypatch):
+    def failing_predict(_property_data):
+        raise RuntimeError("Simulated model failure")
+
+    monkeypatch.setattr(valuation_model, "predict", failing_predict)
+
+    try:
+        response = client.post(
+            "/agents/valuation",
+            json=VALID_PROPERTY,
+        )
+        assert response.status_code == 503
+        assert (
+            response.json()["detail"]["error_code"]
+            == "VALUATION_AGENT_FAILED"
+        )
+    finally:
+        monkeypatch.undo()
+
+
+# Operations
+
+def test_health_endpoint():
+    response = client.get("/health")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "healthy"}
+
+import pytest
+from fastapi.testclient import TestClient
+
+from app.main import app, valuation_model
+
+client = TestClient(app)
+
+
+VALID_PROPERTY = {
+    "location": "Killarney, County Kerry",
+    "bedrooms": 3,
+    "property_type": "detached_house",
+    "ber_rating": "B2",
+}
+
+VALID_BORROWER = {
+    "application_id": "APP-001",
+    "annual_income": 65000,
+    "annual_debt_repayments": 12000,
+    "deposit": 40000,
+    "mortgage_term_years": 30,
+}
+
+
+# US1: Receive property details
+
+def test_us1_accepts_valid_property():
+    response = client.post("/properties", json=VALID_PROPERTY)
+
+    assert response.status_code == 201
+    assert response.json()["status"] == "accepted"
+    assert response.json()["property"]["bedrooms"] == 3
+
+
+@pytest.mark.parametrize(
+    "field",
+    ["location", "bedrooms", "property_type", "ber_rating"],
+)
+def test_us1_rejects_missing_required_fields(field):
+    payload = VALID_PROPERTY.copy()
+    del payload[field]
+
+    response = client.post("/properties", json=payload)
+
+    assert response.status_code == 422
+
+
+def test_us1_rejects_invalid_bedroom_count():
+    payload = {**VALID_PROPERTY, "bedrooms": -1}
+
+    response = client.post("/properties", json=payload)
+
+    assert response.status_code == 422
+
+
+def test_us1_rejects_unsupported_property_type():
+    payload = {**VALID_PROPERTY, "property_type": "castle"}
+
+    response = client.post("/properties", json=payload)
+
+    assert response.status_code == 422
+
+
+def test_us1_rejects_unknown_fields():
+    payload = {**VALID_PROPERTY, "unknown_field": "unexpected"}
+
+    response = client.post("/properties", json=payload)
+
+    assert response.status_code == 422
+
+
+# US2: Automated Property Valuation Model
+
+def test_us2_returns_demo_estimate_for_valid_input():
+    response = client.post("/valuations/model", json=VALID_PROPERTY)
+
+    assert response.status_code == 200
+
+    body = response.json()
+    assert body["status"] == "success"
+    assert body["estimated_value"] > 0
+    assert body["currency"] == "EUR"
+    assert body["demo_only"] is True
+    assert "not for lending" in body["disclaimer"]
+
+
+def test_us2_rejects_invalid_property_input():
+    payload = {**VALID_PROPERTY, "ber_rating": "Z9"}
+
+    response = client.post("/valuations/model", json=payload)
+
+    assert response.status_code == 422
+
+
+def test_us2_reports_model_processing_error(monkeypatch):
+    def failing_predict(_property_data):
+        raise RuntimeError("Simulated model failure")
+
+    monkeypatch.setattr(valuation_model, "predict", failing_predict)
+
+    try:
+        response = client.post(
+            "/valuations/model",
+            json=VALID_PROPERTY,
+        )
+        assert response.status_code == 503
+        assert (
+            response.json()["detail"]["error_code"]
+            == "VALUATION_PROCESSING_FAILED"
+        )
+    finally:
+        monkeypatch.undo()
+
+
+# US3: Affordability Agent
+
+def test_us3_produces_affordability_assessment():
+    response = client.post(
+        "/affordability/assess",
+        json=VALID_BORROWER,
+    )
+
+    assert response.status_code == 200
+
+    body = response.json()
+    assert body["assessment_status"] == "completed"
+    assert body["dti"] == 18.46
+    assert body["deposit"] == 40000
+    assert body["mortgage_term_years"] == 30
+    assert body["decision"] == "not_assessed"
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
+        "annual_income",
+        "annual_debt_repayments",
+        "deposit",
+        "mortgage_term_years",
+    ],
+)
+def test_us3_rejects_missing_financial_fields(field):
+    payload = VALID_BORROWER.copy()
+    del payload[field]
+
+    response = client.post("/affordability/assess", json=payload)
+
+    assert response.status_code == 422
+
+
+def test_us3_rejects_zero_income():
+    payload = {**VALID_BORROWER, "annual_income": 0}
+
+    response = client.post("/affordability/assess", json=payload)
+
+    assert response.status_code == 422
+
+
+def test_us3_rejects_negative_deposit():
+    payload = {**VALID_BORROWER, "deposit": -1}
+
+    response = client.post("/affordability/assess", json=payload)
+
+    assert response.status_code == 422
+
+
+# US4: DTI calculation
+
+def test_us4_calculates_dti_correctly():
+    response = client.post("/affordability/dti", json=VALID_BORROWER)
+
+    assert response.status_code == 200
+
+    body = response.json()
+    assert body["dti"] == 18.46
+    assert body["unit"] == "percent"
+    assert body["status"] == "success"
+
+
+def test_us4_zero_debt_produces_zero_dti():
+    payload = {
+        **VALID_BORROWER,
+        "annual_debt_repayments": 0,
+    }
+
+    response = client.post("/affordability/dti", json=payload)
+
+    assert response.status_code == 200
+    assert response.json()["dti"] == 0.0
+
+
+def test_us4_rejects_negative_debt():
+    payload = {
+        **VALID_BORROWER,
+        "annual_debt_repayments": -100,
+    }
+
+    response = client.post("/affordability/dti", json=payload)
+
+    assert response.status_code == 422
+
+
+# US5: Valuation Agent
+
+def test_us5_returns_estimate_for_valid_property():
+    response = client.post("/agents/valuation", json=VALID_PROPERTY)
+
+    assert response.status_code == 200
+
+    body = response.json()
+    assert body["status"] == "success"
+    assert body["estimated_value"] > 0
+    assert body["currency"] == "EUR"
+    assert body["demo_only"] is True
+
+
+def test_us5_rejects_invalid_property():
+    payload = {**VALID_PROPERTY, "bedrooms": -2}
+
+    response = client.post("/agents/valuation", json=payload)
+
+    assert response.status_code == 422
+
+
+def test_us5_reports_model_failure(monkeypatch):
+    def failing_predict(_property_data):
+        raise RuntimeError("Simulated model failure")
+
+    monkeypatch.setattr(valuation_model, "predict", failing_predict)
+
+    try:
+        response = client.post(
+            "/agents/valuation",
+            json=VALID_PROPERTY,
+        )
+        assert response.status_code == 503
+        assert (
+            response.json()["detail"]["error_code"]
+            == "VALUATION_AGENT_FAILED"
+        )
+    finally:
+        monkeypatch.undo()
+
+
+# Operations
+
+def test_health_endpoint():
+    response = client.get("/health")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "healthy"}

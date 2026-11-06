@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple Input</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 500px; margin: 60px auto; padding: 0 16px; }
+    textarea { width: 100%; height: 100px; font-size: 16px; padding: 8px; box-sizing: border-box; }
+    button { margin-top: 10px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
+    #thanks { display: none; }
+    #error { color: red; }
+  </style>
+</head>
+<body>
+
+  <!-- Form the user sees first -->
+  <div id="form">
+    <h1>Write something</h1>
+    <textarea id="userText" placeholder="Type anything here..."></textarea>
+    <br>
+    <button id="submitBtn">Submit</button>
+    <p id="error"></p>
+  </div>
+
+  <!-- Message shown after saving -->
+  <div id="thanks">
+    <h1>Thanks for your input!</h1>
+    <button id="againBtn">Write another</button>
+  </div>
+
+  <p><a href="view.html">See all stored entries</a></p>
+
+  <!-- Uncomment these two lines only if you switch to Firestore -->
+  <!-- <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script> -->
+  <!-- <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script> -->
+
+  <script src="storage.js"></script>
+  <script>
+    const textBox = document.getElementById("userText");
+    const errorMsg = document.getElementById("error");
+
+    document.getElementById("submitBtn").addEventListener("click", async () => {
+      const text = textBox.value.trim();
+      if (text === "") {
+        errorMsg.textContent = "Please type something first.";
+        return;
+      }
+
+      try {
+        await storage.save(text);   // the page doesn't care which database this is
+        document.getElementById("form").style.display = "none";
+        document.getElementById("thanks").style.display = "block";
+      } catch (err) {
+        errorMsg.textContent = "Could not save: " + err.message;
+      }
+    });
+
+    document.getElementById("againBtn").addEventListener("click", () => {
+      textBox.value = "";
+      errorMsg.textContent = "";
+      document.getElementById("thanks").style.display = "none";
+      document.getElementById("form").style.display = "block";
+    });
+  </script>
+</body>
+</html>

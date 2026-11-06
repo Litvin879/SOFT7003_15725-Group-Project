@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up - AL-Web</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <p><a href="index.html">← Home</a></p>
+  <h1>Sign up</h1>
+
+  <form id="form">
+    <p>I am a:</p>
+    <div class="roles">
+      <button type="button" data-role="broker">Broker</button>
+      <button type="button" data-role="underwriter">Bank Underwriter</button>
+    </div>
+
+    <label>Full name <input type="text" id="name" required></label>
+    <label>Email <input type="email" id="email" required></label>
+    <label>Password <input type="password" id="password" minlength="6" required></label>
+
+    <button type="submit" class="submit">Create account</button>
+    <p id="error"></p>
+  </form>
+
+  <p>Already have an account? <a href="login.html">Log in</a></p>
+
+  <script type="module">
+    import { signUp, friendlyError } from "./auth.js";
+    import { setUpRoleButtons } from "./roleButtons.js";
+
+    const getRole = setUpRoleButtons();
+    const form = document.getElementById("form");
+    const error = document.getElementById("error");
+    const submit = form.querySelector(".submit");
+
+    form.addEventListener("submit", async event => {
+      event.preventDefault();
+      error.textContent = "";
+
+      if (!getRole()) {
+        error.textContent = "Choose Broker or Bank Underwriter.";
+        return;
+      }
+
+      submit.disabled = true;
+      try {
+        const page = await signUp(
+          document.getElementById("name").value.trim(),
+          document.getElementById("email").value.trim(),
+          document.getElementById("password").value,
+          getRole()
+        );
+        window.location.href = page;
+      } catch (err) {
+        error.textContent = friendlyError(err);
+        submit.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
