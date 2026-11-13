@@ -10,5 +10,8 @@
     "hardhat": "^3.21.2",
     "typescript": "~6.0.3",
     "viem": "^2.57.16"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.5.1"
   }
 }
