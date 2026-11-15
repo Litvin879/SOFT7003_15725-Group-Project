@@ -1,0 +1,315 @@
+
+from enum import Enum
+from typing import Literal
+
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+
+app = FastAPI(
+    title="Sprint 1 AI Engine",
+    version="0.1.0",
+    description=(
+        "Sprint 1 prototype. Property valuations are demonstrations only "
+        "and must not be used for real lending decisions."
+    ),
+)
+
+
+# ---------------------------------------------------------
+# Shared configuration and schemas
+# ---------------------------------------------------------
+
+class PropertyType(str, Enum):
+    DETACHED_HOUSE = "detached_house"
+    SEMI_DETACHED_HOUSE = "semi_detached_house"
+    TERRACED_HOUSE = "terraced_house"
+    APARTMENT = "apartment"
+    BUNGALOW = "bungalow"
+
+
+class BERating(str, Enum):
+    A1 = "A1"
+    A2 = "A2"
+    A3 = "A3"
+    B1 = "B1"
+    B2 = "B2"
+    B3 = "B3"
+    C1 = "C1"
+    C2 = "C2"
+    C3 = "C3"
+    D1 = "D1"
+    D2 = "D2"
+    E1 = "E1"
+    E2 = "E2"
+    F = "F"
+    G = "G"
+    EXEMPT = "exempt"
+
+
+class APIModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+
+class PropertyInput(APIModel):
+    location: str = Field(min_length=1, max_length=200)
+    bedrooms: int = Field(ge=0, le=30)
+    property_type: PropertyType
+    ber_rating: BERating
+
+    @field_validator("location")
+    @classmethod
+    def validate_location(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Location must not be blank")
+        return value
+
+
+class PropertyAccepted(APIModel):
+    status: Literal["accepted"] = "accepted"
+    property: PropertyInput
+
+
+class ValuationResult(APIModel):
+    status: Literal["success"] = "success"
+    estimated_value: float = Field(gt=0)
+    currency: Literal["EUR"] = "EUR"
+    model_version: str
+    demo_only: bool = True
+    disclaimer: str
+
+
+class ValuationError(APIModel):
+    status: Literal["error"] = "error"
+    error_code: str
+    message: str
+
+
+class BorrowerInput(APIModel):
+    application_id: str = Field(min_length=1, max_length=100)
+
+    # Income and debt are annual EUR amounts.
+    annual_income: float = Field(gt=0, le=100_000_000)
+    annual_debt_repayments: float = Field(ge=0, le=100_000_000)
+    deposit: float = Field(ge=0, le=100_000_000)
+
+    mortgage_term_years: int = Field(ge=1, le=40)
+
+
+class DTIResult(APIModel):
+    application_id: str
+    dti: float
+    unit: Literal["percent"] = "percent"
+    formula: str
+    status: Literal["success"] = "success"
+
+
+class AffordabilityResult(APIModel):
+    application_id: str
+    assessment_status: Literal["completed"] = "completed"
+    dti: float
+    deposit: float
+    mortgage_term_years: int
+    currency: Literal["EUR"] = "EUR"
+    decision: Literal["not_assessed"] = "not_assessed"
+    disclaimer: str
+
+
+# ---------------------------------------------------------
+# US1: Receive and validate property details
+# ---------------------------------------------------------
+
+@app.post(
+    "/properties",
+    response_model=PropertyAccepted,
+    status_code=201,
+    tags=["US1 - Property input"],
+)
+def receive_property(data: PropertyInput) -> PropertyAccepted:
+    return PropertyAccepted(property=data)
+
+
+# ---------------------------------------------------------
+# US2: Automated Property Valuation Model
+# ---------------------------------------------------------
+
+class DemoValuationModel:
+    """Replace this class with a validated valuation model.
+
+    This placeholder intentionally does not estimate market value.
+    It returns a fixed demonstration amount so that the API and
+    orchestration can be tested independently of a real model.
+    """
+
+    version = "DEMO-0.1"
+
+    def predict(self, property_data: PropertyInput) -> ValuationResult:
+        # Do not use this amount as a real property valuation.
+        return ValuationResult(
+            estimated_value=250_000.00,
+            model_version=self.version,
+            demo_only=True,
+            disclaimer=(
+                "Demonstration amount only; not a market valuation "
+                "and not for lending or credit decisions."
+            ),
+        )
+
+
+valuation_model = DemoValuationModel()
+
+
+@app.post(
+    "/valuations/model",
+    response_model=ValuationResult,
+    tags=["US2 - Valuation model"],
+)
+def calculate_valuation(data: PropertyInput) -> ValuationResult:
+    try:
+        return valuation_model.predict(data)
+    except Exception as exc:
+        # Log the underlying exception in a real deployment.
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "error_code": "VALUATION_PROCESSING_FAILED",
+                "message": "The valuation model could not process the data.",
+            },
+        ) from exc
+
+
+# ---------------------------------------------------------
+# US4: Deterministic DTI calculation
+# ---------------------------------------------------------
+
+DTI_FORMULA = (
+    "(annual debt repayments / annual gross income) * 100"
+)
+
+
+def calculate_dti_value(
+    annual_income: float,
+    annual_debt_repayments: float,
+) -> float:
+    """Return DTI percentage rounded to two decimal places."""
+
+    if annual_income <= 0:
+        raise ValueError("Annual income must be greater than zero")
+
+    if annual_debt_repayments < 0:
+        raise ValueError("Debt repayments cannot be negative")
+
+    return round(
+        (annual_debt_repayments / annual_income) * 100,
+        2,
+    )
+
+
+@app.post(
+    "/affordability/dti",
+    response_model=DTIResult,
+    tags=["US4 - DTI"],
+)
+def calculate_dti(data: BorrowerInput) -> DTIResult:
+    return DTIResult(
+        application_id=data.application_id,
+        dti=calculate_dti_value(
+            data.annual_income,
+            data.annual_debt_repayments,
+        ),
+        formula=DTI_FORMULA,
+    )
+
+
+# ---------------------------------------------------------
+# US3: Affordability Agent
+# ---------------------------------------------------------
+
+class AffordabilityAgent:
+    """Coordinates financial calculations.
+
+    This prototype calculates DTI but does not approve or
+    decline mortgage applications.
+    """
+
+    def assess(
+        self,
+        data: BorrowerInput,
+    ) -> AffordabilityResult:
+        dti = calculate_dti_value(
+            data.annual_income,
+            data.annual_debt_repayments,
+        )
+
+        return AffordabilityResult(
+            application_id=data.application_id,
+            dti=dti,
+            deposit=data.deposit,
+            mortgage_term_years=data.mortgage_term_years,
+            decision="not_assessed",
+            disclaimer=(
+                "Calculation prototype only. No lending decision "
+                "or complete affordability determination is made."
+            ),
+        )
+
+
+affordability_agent = AffordabilityAgent()
+
+
+@app.post(
+    "/affordability/assess",
+    response_model=AffordabilityResult,
+    tags=["US3 - Affordability agent"],
+)
+def assess_affordability(
+    data: BorrowerInput,
+) -> AffordabilityResult:
+    return affordability_agent.assess(data)
+
+
+# ---------------------------------------------------------
+# US5: Valuation Agent
+# ---------------------------------------------------------
+
+class ValuationAgent:
+    """Orchestrates validated property input and the AVM."""
+
+    def __init__(self, model: DemoValuationModel):
+        self.model = model
+
+    def assess(self, data: PropertyInput) -> ValuationResult:
+        result = self.model.predict(data)
+
+        # Validate the model response before returning it.
+        if result.estimated_value <= 0:
+            raise ValueError("Model returned an invalid valuation")
+
+        return result
+
+
+valuation_agent = ValuationAgent(valuation_model)
+
+
+@app.post(
+    "/agents/valuation",
+    response_model=ValuationResult,
+    tags=["US5 - Valuation agent"],
+)
+def run_valuation_agent(data: PropertyInput) -> ValuationResult:
+    try:
+        return valuation_agent.assess(data)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "error_code": "VALUATION_AGENT_FAILED",
+                "message": "The valuation agent could not complete the assessment.",
+            },
+        ) from exc
+
+
+@app.get("/health", tags=["Operations"])
+def health_check() -> dict[str, str]:
+    return {"status": "healthy"}

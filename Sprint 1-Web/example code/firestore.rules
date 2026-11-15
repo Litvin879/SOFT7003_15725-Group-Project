@@ -1,0 +1,63 @@
+// Firestore Security Rules for the Agentic Lender project
+// (shared by AL-Web and AL-Mobile).
+//
+// Firebase console > Firestore Database > Rules >
+// replace everything with this file > Publish
+//
+// Anything not listed below stays blocked.
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // The logged-in user's role from their users document
+    // ("Borrower", "Broker" or "Underwriter")
+    function myRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    // ---------------- users ----------------
+    match /users/{uid} {
+      // Read your own document. Brokers and underwriters can also
+      // read other users (e.g. to show a borrower's name).
+      allow read: if signedIn()
+                  && (request.auth.uid == uid || myRole() in ['Broker', 'Underwriter']);
+
+      // Create only your own document, with one of the three roles
+      allow create: if signedIn()
+                    && request.auth.uid == uid
+                    && request.resource.data.role in ['Borrower', 'Broker', 'Underwriter'];
+
+      // Edit your own details (e.g. name), but never your role
+      allow update: if signedIn()
+                    && request.auth.uid == uid
+                    && request.resource.data.role == resource.data.role;
+
+      allow delete: if false;
+    }
+
+    // ---------------- application ----------------
+    match /application/{appId} {
+      // The borrower and their broker see the application;
+      // underwriters see every application
+      allow read: if signedIn()
+                  && (resource.data.borrowerID == request.auth.uid
+                      || resource.data.brokerID == request.auth.uid
+                      || myRole() == 'Underwriter');
+
+      // A borrower creates their own application
+      allow create: if signedIn()
+                    && request.resource.data.borrowerID == request.auth.uid;
+
+      // Only underwriters change an application (e.g. status)
+      allow update: if signedIn() && myRole() == 'Underwriter';
+
+      allow delete: if false;
+    }
+
+  }
+}

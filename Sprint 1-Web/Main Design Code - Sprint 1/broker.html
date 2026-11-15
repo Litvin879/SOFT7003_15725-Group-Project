@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Broker Pipeline - AL-Web</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="wide">
+  <!-- Hidden until Firebase confirms this is a logged-in broker -->
+  <main id="page" hidden>
+    <header>
+      <h1>Broker Pipeline</h1>
+      <div><span id="who"></span> <button id="logout">Log out</button></div>
+    </header>
+
+    <p class="note">Preview for future sprints: the rows below are sample data. Only Log out works for now.</p>
+
+    <!-- Count of my clients' applications in each lifecycle status -->
+    <div class="tiles">
+      <div class="tile"><div class="count">2</div><div class="label">Applied</div></div>
+      <div class="tile"><div class="count">1</div><div class="label">AI Deliberated</div></div>
+      <div class="tile"><div class="count">1</div><div class="label">Underwriter Approved</div></div>
+      <div class="tile"><div class="count">1</div><div class="label">Funded</div></div>
+      <div class="tile"><div class="count">0</div><div class="label">Closed</div></div>
+    </div>
+
+    <div class="filters">
+      <label>Status
+        <select disabled><option>All</option></select>
+      </label>
+      <label>LTV
+        <select disabled><option>All</option><option>Up to 80%</option><option>80–90%</option><option>Over 90%</option></select>
+      </label>
+      <label>Risk tier
+        <select disabled><option>All</option><option>Low</option><option>Medium</option><option>High</option></select>
+      </label>
+    </div>
+
+    <!-- Only applications where brokerID = this broker -->
+    <h2>My clients' applications</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Client</th><th>Property</th><th>Loan</th><th>LTV</th><th>Risk tier</th><th>Status</th><th>Submitted</th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Aoife Byrne</td><td>House, Cork</td><td>€270,000</td><td>90%</td><td class="Medium">Medium</td><td><span class="badge Applied">Applied</span></td><td>20 Oct 2026</td><td><button disabled>View file</button></td></tr>
+          <tr><td>Ciarán Walsh</td><td>Apartment, Dublin</td><td>€315,000</td><td>84%</td><td class="Medium">Medium</td><td><span class="badge Applied">Applied</span></td><td>18 Oct 2026</td><td><button disabled>View file</button></td></tr>
+          <tr><td>Sinéad Kelly</td><td>House, Galway</td><td>€240,000</td><td>75%</td><td class="Low">Low</td><td><span class="badge AI-Deliberated">AI Deliberated</span></td><td>12 Oct 2026</td><td><button disabled>View file</button></td></tr>
+          <tr><td>Darragh Ryan</td><td>House, Kildare</td><td>€380,000</td><td>92%</td><td class="High">High</td><td><span class="badge Underwriter-Approved">Underwriter Approved</span></td><td>02 Oct 2026</td><td><button disabled>View file</button></td></tr>
+          <tr><td>Niamh Doyle</td><td>House, Limerick</td><td>€210,000</td><td>70%</td><td class="Low">Low</td><td><span class="badge Funded">Funded</span></td><td>15 Sep 2026</td><td><button disabled>View file</button></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Coming in future sprints</h2>
+    <ul class="coming">
+      <li>Real applications from Firebase, only for clients you referred</li>
+      <li>Working filters by status, LTV band and risk tier</li>
+      <li>Loan file view: borrower details, DTI breakdown and property valuation</li>
+      <li>Messages with your clients</li>
+    </ul>
+  </main>
+
+  <script type="module">
+    import { requireRole, logOut } from "./auth.js";
+
+    const email = await requireRole("broker");
+    document.getElementById("who").textContent = email;
+    document.getElementById("page").hidden = false;
+
+    document.getElementById("logout").addEventListener("click", async () => {
+      await logOut();
+      window.location.href = "index.html";
+    });
+  </script>
+</body>
+</html>

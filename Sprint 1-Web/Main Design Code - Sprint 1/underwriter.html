@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Underwriter Pipeline - AL-Web</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="wide">
+  <!-- Hidden until Firebase confirms this is a logged-in underwriter -->
+  <main id="page" hidden>
+    <header>
+      <h1>Underwriter Pipeline</h1>
+      <div><span id="who"></span> <button id="logout">Log out</button></div>
+    </header>
+
+    <p class="note">Preview for future sprints: the rows below are sample data. Only Log out works for now.</p>
+
+    <!-- Count of ALL applications in each lifecycle status -->
+    <div class="tiles">
+      <div class="tile"><div class="count">14</div><div class="label">Applied</div></div>
+      <div class="tile"><div class="count">6</div><div class="label">AI Deliberated</div></div>
+      <div class="tile"><div class="count">9</div><div class="label">Underwriter Approved</div></div>
+      <div class="tile"><div class="count">21</div><div class="label">Funded</div></div>
+      <div class="tile"><div class="count">4</div><div class="label">Closed</div></div>
+    </div>
+
+    <!-- Portfolio split by LTV threshold and risk tier -->
+    <div class="tiles">
+      <div class="tile"><div class="count">31</div><div class="label">LTV up to 80%</div></div>
+      <div class="tile"><div class="count">17</div><div class="label">LTV 80–90%</div></div>
+      <div class="tile"><div class="count">6</div><div class="label">LTV over 90%</div></div>
+      <div class="tile"><div class="count">8</div><div class="label">High risk</div></div>
+    </div>
+
+    <div class="filters">
+      <label>Status
+        <select disabled><option>All</option></select>
+      </label>
+      <label>LTV
+        <select disabled><option>All</option><option>Up to 80%</option><option>80–90%</option><option>Over 90%</option></select>
+      </label>
+      <label>Risk tier
+        <select disabled><option>All</option><option>Low</option><option>Medium</option><option>High</option></select>
+      </label>
+      <label>Broker
+        <select disabled><option>All brokers</option></select>
+      </label>
+    </div>
+
+    <!-- Every application in the portfolio -->
+    <h2>All applications</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Applicant</th><th>Broker</th><th>Property</th><th>Loan</th><th>LTV</th><th>Risk tier</th><th>Status</th><th>Submitted</th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Aoife Byrne</td><td>Taylor Jay</td><td>House, Cork</td><td>€270,000</td><td>90%</td><td class="Medium">Medium</td><td><span class="badge Applied">Applied</span></td><td>20 Oct 2026</td><td><button disabled>Review</button></td></tr>
+          <tr><td>Mark O'Neill</td><td>Seán Murphy</td><td>Apartment, Dublin</td><td>€350,000</td><td>93%</td><td class="High">High</td><td><span class="badge AI-Deliberated">AI Deliberated</span></td><td>16 Oct 2026</td><td><button disabled>Sign off</button></td></tr>
+          <tr><td>Sinéad Kelly</td><td>Taylor Jay</td><td>House, Galway</td><td>€240,000</td><td>75%</td><td class="Low">Low</td><td><span class="badge AI-Deliberated">AI Deliberated</span></td><td>12 Oct 2026</td><td><button disabled>Sign off</button></td></tr>
+          <tr><td>Emma Brennan</td><td>Seán Murphy</td><td>House, Wexford</td><td>€260,000</td><td>82%</td><td class="Medium">Medium</td><td><span class="badge Underwriter-Approved">Underwriter Approved</span></td><td>05 Oct 2026</td><td><button disabled>View</button></td></tr>
+          <tr><td>Niamh Doyle</td><td>Taylor Jay</td><td>House, Limerick</td><td>€210,000</td><td>70%</td><td class="Low">Low</td><td><span class="badge Funded">Funded</span></td><td>15 Sep 2026</td><td><button disabled>View</button></td></tr>
+          <tr><td>Paul Quinn</td><td>Seán Murphy</td><td>House, Meath</td><td>€190,000</td><td>65%</td><td class="Low">Low</td><td><span class="badge Closed">Closed</span></td><td>01 Jul 2026</td><td><button disabled>View</button></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Coming in future sprints</h2>
+    <ul class="coming">
+      <li>Real applications from Firebase, across the whole portfolio</li>
+      <li>Working filters by status, LTV band, risk tier and broker</li>
+      <li>AI Audit &amp; Deliberation Console: see how the AI committee reached its recommendation</li>
+      <li>Sign-off: approve an application, which mints the loan on the blockchain</li>
+      <li>Stress-Testing Simulator: test the portfolio against interest rate rises</li>
+    </ul>
+  </main>
+
+  <script type="module">
+    import { requireRole, logOut } from "./auth.js";
+
+    const email = await requireRole("underwriter");
+    document.getElementById("who").textContent = email;
+    document.getElementById("page").hidden = false;
+
+    document.getElementById("logout").addEventListener("click", async () => {
+      await logOut();
+      window.location.href = "index.html";
+    });
+  </script>
+</body>
+</html>

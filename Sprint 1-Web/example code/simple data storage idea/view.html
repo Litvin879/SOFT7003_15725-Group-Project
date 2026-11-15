@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stored Entries</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 700px; margin: 60px auto; padding: 0 16px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background: #f0f0f0; }
+  </style>
+</head>
+<body>
+  <h1>Stored entries</h1>
+
+  <table>
+    <thead>
+      <tr><th>#</th><th>Text</th><th>Saved at</th></tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
+
+  <p><a href="index.html">Back to form</a></p>
+
+  <!-- Uncomment these two lines only if you switch to Firestore -->
+  <!-- <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script> -->
+  <!-- <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script> -->
+
+  <script src="storage.js"></script>
+  <script>
+    async function showEntries() {
+      const rows = document.getElementById("rows");
+      const entries = await storage.getAll();
+
+      if (entries.length === 0) {
+        rows.innerHTML = "<tr><td colspan='3'>Nothing stored yet.</td></tr>";
+        return;
+      }
+
+      entries.forEach((entry, i) => {
+        const tr = document.createElement("tr");
+        // textContent (not innerHTML) so typed text can't inject HTML
+        [i + 1, entry.text, new Date(entry.createdAt).toLocaleString()].forEach(value => {
+          const td = document.createElement("td");
+          td.textContent = value;
+          tr.appendChild(td);
+        });
+        rows.appendChild(tr);
+      });
+    }
+
+    showEntries();
+  </script>
+</body>
+</html>
