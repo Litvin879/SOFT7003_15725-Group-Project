@@ -1,0 +1,23 @@
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+**/*service-account*.json
+**/*firebase-adminsdk*.json
+**/firebase-service-account.json
+
+# Python generated files
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+**/.pytest_cache/
+
+# Virtual environments
+.venv/
+**/.venv/
+venv/
+**/venv/
+
+# Editor settings
+.vscode/
