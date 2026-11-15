@@ -1,27 +1,27 @@
 {
   "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\contracts\\Counter.sol": {
-    "jobHash": "solc-0_8_34-54d19f273879470985d478283d396c711305d0cb",
+    "jobHash": "solc-0_8_34-74766587092fb166f5c8e569147684b931ba8837",
     "isolated": false,
     "compilerType": "solc",
     "artifactPaths": [
       "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\artifacts\\contracts\\Counter.sol\\Counter.json"
     ],
-    "buildInfoPath": "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\artifacts\\build-info\\solc-0_8_34-a6b82ce7cd1677d41484e2ea71cd863080cac9be.json",
-    "buildInfoOutputPath": "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\artifacts\\build-info\\solc-0_8_34-a6b82ce7cd1677d41484e2ea71cd863080cac9be.output.json",
+    "buildInfoPath": "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\artifacts\\build-info\\solc-0_8_34-ce1b034a10399e5fad709b79b043a61cdb690667.json",
+    "buildInfoOutputPath": "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\artifacts\\build-info\\solc-0_8_34-ce1b034a10399e5fad709b79b043a61cdb690667.output.json",
     "typeFilePath": "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\artifacts\\contracts\\Counter.sol\\artifacts.d.ts",
     "wasm": false,
     "artifactsDirectory": "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\artifacts",
     "emitsTypeDeclarations": true
   },
   "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\contracts\\Counter.t.sol": {
-    "jobHash": "solc-0_8_34-2e0b2bd55b31a0ed10dbf7a6079d899ac503cc57",
+    "jobHash": "solc-0_8_34-210061ae849ab3a59ed29071588cfc94b0c26106",
     "isolated": false,
     "compilerType": "solc",
     "artifactPaths": [
       "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\artifacts\\contracts\\Counter.t.sol\\CounterTest.json"
     ],
-    "buildInfoPath": "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\artifacts\\build-info\\solc-0_8_34-a6b82ce7cd1677d41484e2ea71cd863080cac9be.json",
-    "buildInfoOutputPath": "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\artifacts\\build-info\\solc-0_8_34-a6b82ce7cd1677d41484e2ea71cd863080cac9be.output.json",
+    "buildInfoPath": "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\artifacts\\build-info\\solc-0_8_34-ce1b034a10399e5fad709b79b043a61cdb690667.json",
+    "buildInfoOutputPath": "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\artifacts\\build-info\\solc-0_8_34-ce1b034a10399e5fad709b79b043a61cdb690667.output.json",
     "wasm": false,
     "artifactsDirectory": "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\artifacts",
     "emitsTypeDeclarations": false
