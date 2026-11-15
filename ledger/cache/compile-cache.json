@@ -1,0 +1,57 @@
+{
+  "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\contracts\\Counter.sol": {
+    "jobHash": "solc-0_8_34-54d19f273879470985d478283d396c711305d0cb",
+    "isolated": false,
+    "compilerType": "solc",
+    "artifactPaths": [
+      "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\artifacts\\contracts\\Counter.sol\\Counter.json"
+    ],
+    "buildInfoPath": "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\artifacts\\build-info\\solc-0_8_34-a6b82ce7cd1677d41484e2ea71cd863080cac9be.json",
+    "buildInfoOutputPath": "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\artifacts\\build-info\\solc-0_8_34-a6b82ce7cd1677d41484e2ea71cd863080cac9be.output.json",
+    "typeFilePath": "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\artifacts\\contracts\\Counter.sol\\artifacts.d.ts",
+    "wasm": false,
+    "artifactsDirectory": "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\artifacts",
+    "emitsTypeDeclarations": true
+  },
+  "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\contracts\\Counter.t.sol": {
+    "jobHash": "solc-0_8_34-2e0b2bd55b31a0ed10dbf7a6079d899ac503cc57",
+    "isolated": false,
+    "compilerType": "solc",
+    "artifactPaths": [
+      "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\artifacts\\contracts\\Counter.t.sol\\CounterTest.json"
+    ],
+    "buildInfoPath": "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\artifacts\\build-info\\solc-0_8_34-a6b82ce7cd1677d41484e2ea71cd863080cac9be.json",
+    "buildInfoOutputPath": "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\artifacts\\build-info\\solc-0_8_34-a6b82ce7cd1677d41484e2ea71cd863080cac9be.output.json",
+    "wasm": false,
+    "artifactsDirectory": "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\artifacts",
+    "emitsTypeDeclarations": false
+  },
+  "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\contracts\\LoanAudit.sol": {
+    "jobHash": "solc-0_8_34-c06a8870e56453d599b3efbb41008588fba93f27",
+    "isolated": false,
+    "compilerType": "solc",
+    "artifactPaths": [
+      "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\artifacts\\contracts\\LoanAudit.sol\\LoanAudit.json"
+    ],
+    "buildInfoPath": "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\artifacts\\build-info\\solc-0_8_34-a6b82ce7cd1677d41484e2ea71cd863080cac9be.json",
+    "buildInfoOutputPath": "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\artifacts\\build-info\\solc-0_8_34-a6b82ce7cd1677d41484e2ea71cd863080cac9be.output.json",
+    "typeFilePath": "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\artifacts\\contracts\\LoanAudit.sol\\artifacts.d.ts",
+    "wasm": false,
+    "artifactsDirectory": "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\artifacts",
+    "emitsTypeDeclarations": true
+  },
+  "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\contracts\\LoanNoteRegistry.sol": {
+    "jobHash": "solc-0_8_34-caf9f25135ce2fe6220eb2c85c2b3e7234838751",
+    "isolated": false,
+    "compilerType": "solc",
+    "artifactPaths": [
+      "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\artifacts\\contracts\\LoanNoteRegistry.sol\\LoanNoteRegistry.json"
+    ],
+    "buildInfoPath": "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\artifacts\\build-info\\solc-0_8_34-caf9f25135ce2fe6220eb2c85c2b3e7234838751.json",
+    "buildInfoOutputPath": "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\artifacts\\build-info\\solc-0_8_34-caf9f25135ce2fe6220eb2c85c2b3e7234838751.output.json",
+    "typeFilePath": "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\artifacts\\contracts\\LoanNoteRegistry.sol\\artifacts.d.ts",
+    "wasm": false,
+    "artifactsDirectory": "C:\\Users\\sam\\OneDrive\\Documents\\GitHub\\SOFT7003_15725-Group-Project\\ledger\\artifacts",
+    "emitsTypeDeclarations": true
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_34-caf9f25135ce2fe6220eb2c85c2b3e7234838751",
+  "solcVersion": "0.8.34",
+  "solcLongVersion": "0.8.34+commit.80d5c536",
+  "compilerType": "solc",
+  "userSourceNameMap": {
+    "contracts/LoanNoteRegistry.sol": "project/contracts/LoanNoteRegistry.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "osaka",
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode.linkReferences",
+            "evm.bytecode.object",
+            "evm.bytecode.opcodes",
+            "evm.bytecode.sourceMap",
+            "evm.deployedBytecode.immutableReferences",
+            "evm.deployedBytecode.linkReferences",
+            "evm.deployedBytecode.object",
+            "evm.deployedBytecode.opcodes",
+            "evm.deployedBytecode.sourceMap",
+            "evm.methodIdentifiers"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/LoanNoteRegistry.sol": {
+        "content": "// SPDX-License-Identifier: MIT\r\npragma solidity ^0.8.0;\r\n\r\ncontract LoanNoteRegistry {\r\n    struct LoanNote {\r\n        uint256 principalEuro;\r\n        uint256 aprBasisPoints;\r\n        uint256 termMonths;\r\n        string borrowerPublicId;\r\n    }\r\n\r\n    address public immutable issuer = msg.sender;\r\n    mapping(string => LoanNote) public loanNotes;\r\n\r\n    function createLoanNote(\r\n        string calldata applicationRef,\r\n        uint256 principalEuro,\r\n        uint256 aprBasisPoints,\r\n        uint256 termMonths,\r\n        string calldata borrowerPublicId\r\n    ) external {\r\n        require(msg.sender == issuer, \"Only the issuer can create loan notes\");\r\n        require(bytes(applicationRef).length > 0, \"Application reference required\");\r\n        require(bytes(borrowerPublicId).length > 0, \"Borrower identifier required\");\r\n        require(principalEuro > 0 && termMonths > 0, \"Invalid loan terms\");\r\n        require(loanNotes[applicationRef].principalEuro == 0, \"Loan note already exists\");\r\n\r\n        loanNotes[applicationRef] = LoanNote(\r\n            principalEuro,\r\n            aprBasisPoints,\r\n            termMonths,\r\n            borrowerPublicId\r\n        );\r\n    }\r\n}"
+      }
+    }
+  }
+}
