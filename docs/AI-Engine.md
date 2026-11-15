@@ -1,58 +1,131 @@
-# AL-AI-Engine
+
+# AI Engine
 
 ## Overview
 
-The AL-AI-Engine is the Python backend component of the Agentic Lender academic project. It uses FastAPI, Firebase Firestore and deterministic Python agents to assess property applications.
+The AI Engine is a deterministic Python prototype for the Irish Property Valuation and Affordability project.
+
+It uses four coordinated agents to produce an indicative property assessment. The system is an academic prototype and does not provide professional valuations, mortgage offers or lending decisions.
 
 ## Technology Stack
 
 - Python
 - FastAPI
 - Pydantic
-- Firebase Admin SDK
-- Google Cloud Firestore
-- Uvicorn
+- Firebase Firestore
+- Pytest
 
 ## Agents
 
-### Property Valuation Agent
-Currently returns a fixed demonstration estimate of €250,000. This is not a professional or market valuation.
+### 1. Property Valuation Agent
 
-### Affordability Agent
-Calculates affordability indicators, including annual repayments and debt-to-income ratio (DTI).
+Returns a fixed demonstration property value of €250,000.
 
-### Market & Macro Agent
-Uses illustrative sample market indicators to demonstrate market-condition assessment. Sample figures are not live statistics.
+This is a placeholder and is not based on comparable property sales or a trained valuation model.
 
-### Underwriting Strategist
-Change that description to say it is implemented, using prototype thresholds and indicative demo assessments only (not real lending decisions).
+### 2. Affordability Agent
 
-## Firestore Integration
+Calculates:
+- Annual and monthly gross income
+- Annual and monthly existing debt repayments
+- Debt-to-income indicator
+- Deposit
+- Mortgage term
 
-The API reads applications from the `application` collection using the Firestore document ID supplied as `application_id`.
+It does not approve lending.
 
-It saves assessment results under `aiAssessment` and updates the application status to `AI Deliberated`.
+### 3. Market & Macro Agent
 
-Existing `propertyDetails` and `financialDetails` fields are preserved.
+Performs an indicative mortgage interest-rate stress test.
 
-## Running Locally
+It:
+- Calculates the current monthly mortgage repayment.
+- Increases the interest rate by two percentage points.
+- Calculates the stressed monthly repayment.
+- Recalculates DTI including existing debt repayments.
+- Checks whether stressed DTI remains below 40%.
 
-1. Install the dependencies:
+The calculation uses the financial information supplied with the application. It does not retrieve live market data.
 
-   `pip install -r requirements.txt`
+### 4. Underwriting Strategist
 
-2. Configure Firebase credentials using a local `.env` file.
+Applies the project's proposed assessment rules.
 
-3. Start the API:
+**Decline / High risk**
+- LTV above 90%.
+- Loan-to-income above 4 times gross income for first-time buyers.
+- Loan-to-income above 3.5 times gross income for other buyers.
+- DTI including the new mortgage repayment above 40%.
 
-   `python -m uvicorn app.main:app --reload`
+**Conditionally Approve / Medium risk**
+- LTV between 80% and 90%.
+- DTI between 35% and 40%.
+- Asking price more than 5% above the estimated valuation.
 
-4. Open the interactive API documentation:
+**Approve / Low risk**
+- None of the above conditions are triggered.
 
-   `http://127.0.0.1:8000/docs`
+These are prototype assessment rules and should not be represented as an official lending decision or as a complete statement of Central Bank regulations.
 
-## Important Notes
+## API and Firestore Integration
 
-This is an academic prototype. Demonstration valuations, sample market data and affordability calculations are not financial advice, mortgage offers or lending decisions.
+The FastAPI endpoint:
 
-Firebase credentials and `.env` files must never be committed to GitHub.
+`POST /applications/assess`
+
+Reads an application from Firestore, validates its property and financial details, runs the four agents and saves the assessment under `aiAssessment`.
+
+The application status is updated to:
+
+`AI Deliberated`
+
+The assessment includes:
+- `valuation`
+- `affordability`
+- `marketMacro`
+- `underwriting`
+- `recommendation`
+- `riskTier`
+- `agents`
+
+Each agent entry contains its name, verdict and reasoning.
+
+## Required Input Fields
+
+Property details:
+- `town`
+- `county`
+- `bedrooms`
+- `propertyType`
+- `berRating`
+- `floorAreaSqm`
+- `askingPriceEuro`
+
+Financial details:
+- `annualIncome`
+- `monthlyDebtRepayments`
+- `depositEuro`
+- `mortgageTermYears`
+- `principalEuro`
+- `mortgageInterestRatePercent`
+- `firstTimeBuyer`
+
+The mobile application must supply the additional fields required by the updated API.
+
+## Testing
+
+Run the integration test from the AI Engine directory:
+
+```bash
+python -m pytest ../../tests/test_ai_agents.py -v
+```
+
+The test checks the four-agent coordinator, underwriting outputs and interest-rate stress test.
+
+## Limitations
+
+- The property valuation is a fixed demonstration value.
+- The interest-rate stress test uses the rate supplied with the application.
+- No live property market or economic data is retrieved.
+- Underwriting thresholds are prototype rules.
+- The output is indicative only and is not a mortgage approval or professional financial advice.

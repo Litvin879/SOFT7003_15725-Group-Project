@@ -1,5 +1,5 @@
 
-"""Coordinates the four deterministic agents in the academic prototype."""
+"""Coordinates the four agents in the academic prototype."""
 
 from dataclasses import dataclass
 from typing import Any
@@ -33,7 +33,7 @@ class PropertyValuationAgent:
 
 
 class AffordabilityAgent:
-    """Calculates affordability indicators; does not approve lending."""
+    """Calculates basic affordability indicators."""
 
     def run(self, finances: dict[str, Any]) -> dict[str, Any]:
         annual_income = float(finances["annual_gross_income"])
@@ -75,16 +75,39 @@ class AssessmentCoordinator:
         finances: dict[str, Any],
     ) -> dict[str, Any]:
 
-        # Run the original agents.
         valuation = self.valuation_agent.run(property_details)
         affordability = self.affordability_agent.run(finances)
 
-        # Run the two new agents.
-        market_macro = self.market_macro_agent.run(property_details)
+        market_macro = self.market_macro_agent.run(finances)
+
         underwriting = self.underwriting_agent.run(
-            affordability=affordability,
-            market_macro=market_macro,
+            property_details=property_details,
+            finances=finances,
+            estimated_value_eur=valuation.estimated_value_eur,
         )
+
+        agents = [
+            {
+                "agentName": "Property Valuation Agent",
+                "verdict": valuation.valuation_status,
+                "reasoning": valuation.explanation,
+            },
+            {
+                "agentName": "Affordability Agent",
+                "verdict": affordability["assessment_status"],
+                "reasoning": affordability["notice"],
+            },
+            {
+                "agentName": "Market & Macro Agent",
+                "verdict": market_macro["verdict"],
+                "reasoning": market_macro["reasoning"],
+            },
+            {
+                "agentName": "Underwriting Strategist",
+                "verdict": underwriting["recommendation"],
+                "reasoning": underwriting["reasoning"],
+            },
+        ]
 
         return {
             "valuation": {
@@ -96,4 +119,7 @@ class AssessmentCoordinator:
             "affordability": affordability,
             "marketMacro": market_macro,
             "underwriting": underwriting,
+            "recommendation": underwriting["recommendation"],
+            "riskTier": underwriting["riskTier"],
+            "agents": agents,
         }

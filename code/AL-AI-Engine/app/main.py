@@ -8,7 +8,12 @@ from typing import Literal
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field, ValidationError, field_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    ValidationError,
+    field_validator,
+)
 
 from app.agents import AssessmentCoordinator
 from app.firebase_config import get_firestore_client
@@ -23,18 +28,19 @@ app = FastAPI(
         "Academic prototype using deterministic Python agents and Firebase "
         "Firestore. The valuation is a demo placeholder, not a market valuation."
     ),
-    version="3.0.0",
+    version="3.1.0",
 )
 
 coordinator = AssessmentCoordinator()
 
 
-# Models matching Sam's Firestore mobile data structure
+# Property details received from the mobile application.
 
 class PropertyDetails(BaseModel):
     town: str = Field(min_length=1, max_length=100)
     county: str = Field(min_length=1, max_length=100)
     bedrooms: int = Field(ge=1, le=20)
+
     property_type: Literal[
         "detached_house",
         "semi_detached_house",
@@ -42,8 +48,22 @@ class PropertyDetails(BaseModel):
         "apartment",
         "bungalow",
     ] = Field(alias="propertyType")
-    ber_rating: str = Field(alias="berRating", min_length=1, max_length=10)
-    floor_area_sqm: float = Field(alias="floorAreaSqm", gt=0)
+
+    ber_rating: str = Field(
+        alias="berRating",
+        min_length=1,
+        max_length=10,
+    )
+
+    floor_area_sqm: float = Field(
+        alias="floorAreaSqm",
+        gt=0,
+    )
+
+    asking_price_eur: float = Field(
+        alias="askingPriceEuro",
+        gt=0,
+    )
 
     @field_validator("ber_rating")
     @classmethod
@@ -51,26 +71,62 @@ class PropertyDetails(BaseModel):
         return value.strip().upper()
 
 
+# Financial details received from the mobile application.
+
 class FinancialDetails(BaseModel):
-    annual_gross_income: float = Field(alias="annualIncome", gt=0)
-    monthly_debt_repayments: float = Field(
-        alias="monthlyDebtRepayments", ge=0
+    annual_gross_income: float = Field(
+        alias="annualIncome",
+        gt=0,
     )
-    deposit_eur: float = Field(alias="depositEuro", ge=0)
+
+    monthly_debt_repayments: float = Field(
+        alias="monthlyDebtRepayments",
+        ge=0,
+    )
+
+    deposit_eur: float = Field(
+        alias="depositEuro",
+        ge=0,
+    )
+
     mortgage_term_years: int = Field(
-        alias="mortgageTermYears", ge=1, le=40
+        alias="mortgageTermYears",
+        ge=1,
+        le=40,
+    )
+
+    principal_eur: float = Field(
+        alias="principalEuro",
+        gt=0,
+    )
+
+    mortgage_interest_rate_percent: float = Field(
+        alias="mortgageInterestRatePercent",
+        ge=0,
+        le=30,
+    )
+
+    first_time_buyer: bool = Field(
+        alias="firstTimeBuyer",
     )
 
 
 class AssessmentRequest(BaseModel):
-    application_id: str = Field(min_length=1, max_length=100)
+    application_id: str = Field(
+        min_length=1,
+        max_length=100,
+    )
 
     @field_validator("application_id")
     @classmethod
     def validate_application_id(cls, value: str) -> str:
         value = value.strip()
+
         if not value or "/" in value:
-            raise ValueError("Invalid Firestore application document ID")
+            raise ValueError(
+                "Invalid Firestore application document ID"
+            )
+
         return value
 
 
@@ -80,8 +136,11 @@ def health():
         "status": "ok",
         "openai_required": False,
         "storage": "Firebase Firestore",
-        "collection": os.getenv("FIRESTORE_COLLECTION", "application"),
-        "agents": "deterministic Python agents",
+        "collection": os.getenv(
+            "FIRESTORE_COLLECTION",
+            "application",
+        ),
+        "agents": "four deterministic Python agents",
     }
 
 
@@ -91,7 +150,11 @@ def assess_application(request: AssessmentRequest):
 
     try:
         db = get_firestore_client()
-        collection = os.getenv("FIRESTORE_COLLECTION", "application")
+
+        collection = os.getenv(
+            "FIRESTORE_COLLECTION",
+            "application",
+        )
 
         document_ref = (
             db.collection(collection)
@@ -102,6 +165,7 @@ def assess_application(request: AssessmentRequest):
 
     except Exception as exc:
         logger.exception("Firebase application read failed")
+
         raise HTTPException(
             status_code=503,
             detail="Could not connect to Firebase. Check the server logs.",
@@ -115,14 +179,17 @@ def assess_application(request: AssessmentRequest):
 
     document = snapshot.to_dict() or {}
 
-    # Check that the mobile application contains both expected sections.
+    # Validate property and financial details.
+
     try:
         property_details = PropertyDetails.model_validate(
             document.get("propertyDetails", {})
         )
+
         financial_details = FinancialDetails.model_validate(
             document.get("financialDetails", {})
         )
+
     except ValidationError as exc:
         raise HTTPException(
             status_code=422,
@@ -135,34 +202,54 @@ def assess_application(request: AssessmentRequest):
             },
         ) from exc
 
-    # Convert mobile data into the field names expected by our agents.
+    # Convert mobile data into the field names expected by the agents.
+
     property_data = property_details.model_dump()
+
     property_data["location"] = (
-        f"{property_data['town']}, County {property_data['county']}"
+        f"{property_data['town']}, "
+        f"County {property_data['county']}"
     )
 
     finance_data = financial_details.model_dump()
+
     finance_data["annual_debt_repayments"] = (
         finance_data["monthly_debt_repayments"] * 12
     )
 
-    # Run the valuation and affordability agents.
-    assessment = coordinator.run(property_data, finance_data)
+    # Run all four AI agents.
+
+    try:
+        assessment = coordinator.run(
+            property_data,
+            finance_data,
+        )
+
+    except (ValueError, KeyError) as exc:
+        logger.exception("AI assessment input error")
+
+        raise HTTPException(
+            status_code=422,
+            detail=f"Could not calculate assessment: {str(exc)}",
+        ) from exc
 
     ai_assessment = {
         **assessment,
         "assessmentDate": datetime.now(timezone.utc).isoformat(),
     }
 
-    # Update ONLY the aiAssessment field.
-    # Existing propertyDetails and financialDetails remain untouched.
+    # Update only the AI assessment and application status.
+    # Existing property and financial details remain untouched.
+
     try:
         document_ref.update({
             "aiAssessment": ai_assessment,
-            "status": "AI Deliberated"
+            "status": "AI Deliberated",
         })
+
     except Exception as exc:
         logger.exception("Firebase assessment update failed")
+
         raise HTTPException(
             status_code=503,
             detail="Assessment calculated, but saving to Firebase failed.",
@@ -181,7 +268,11 @@ def get_application(application_id: str):
 
     try:
         db = get_firestore_client()
-        collection = os.getenv("FIRESTORE_COLLECTION", "application")
+
+        collection = os.getenv(
+            "FIRESTORE_COLLECTION",
+            "application",
+        )
 
         snapshot = (
             db.collection(collection)
@@ -191,6 +282,7 @@ def get_application(application_id: str):
 
     except Exception as exc:
         logger.exception("Firebase application read failed")
+
         raise HTTPException(
             status_code=503,
             detail="Could not retrieve the application from Firebase.",
