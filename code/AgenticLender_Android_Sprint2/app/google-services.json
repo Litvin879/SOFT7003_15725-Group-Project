@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "333912556534",
+    "project_id": "agentic-lender-668fa",
+    "storage_bucket": "agentic-lender-668fa.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:333912556534:android:6c64b43d4717e9fed6fdd7",
+        "android_client_info": {
+          "package_name": "com.example.agenticlender"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC9HrbMhFmno1oA3w9PZyXCqkbnGHrayfo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
